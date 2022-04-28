@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import * as React from 'react';
+import React, { useState, useEffect } from 'react';
 
 import { runOnJS } from 'react-native-reanimated';
 import {
@@ -19,10 +19,10 @@ import {
   Camera,
 } from 'react-native-vision-camera';
 
-export default function App() {
-  const [hasPermission, setHasPermission] = React.useState(false);
-  const [ocr, setOcr] = React.useState<OCRFrame>();
-  const [pixelRatio, setPixelRatio] = React.useState<number>(1);
+const App = () => {
+  const [hasPermission, setHasPermission] = useState(false);
+  const [ocr, setOcr] = useState<OCRFrame>();
+  const [pixelRatio, setPixelRatio] = useState<number>(1);
   const devices = useCameraDevices();
   const device = devices.back;
 
@@ -32,7 +32,7 @@ export default function App() {
     runOnJS(setOcr)(data);
   }, []);
 
-  React.useEffect(() => {
+  useEffect(() => {
     (async () => {
       const status = await Camera.requestCameraPermission();
       setHasPermission(status === 'authorized');
@@ -40,6 +40,9 @@ export default function App() {
   }, []);
 
   const renderOverlay = () => {
+    const arr = ocr?.result?.blocks || [];
+    if (arr.length > 0)
+      console.log('ocr?.result.blocks = ', ocr?.result.blocks);
     return (
       <>
         {ocr?.result.blocks.map((block) => {
@@ -85,9 +88,9 @@ export default function App() {
         onLayout={(event: LayoutChangeEvent) => {
           setPixelRatio(
             event.nativeEvent.layout.width /
-              PixelRatio.getPixelSizeForLayoutSize(
-                event.nativeEvent.layout.width
-              )
+            PixelRatio.getPixelSizeForLayoutSize(
+              event.nativeEvent.layout.width
+            )
           );
         }}
       />
@@ -99,3 +102,5 @@ export default function App() {
     </View>
   );
 }
+
+export default App;
