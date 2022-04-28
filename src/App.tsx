@@ -11,6 +11,8 @@ import {
   TouchableOpacity,
   Alert,
   Clipboard,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import { OCRFrame, scanOCR } from 'vision-camera-ocr';
 import {
@@ -22,9 +24,33 @@ import {
 const App = () => {
   const [hasPermission, setHasPermission] = useState(false);
   const [ocr, setOcr] = useState<OCRFrame>();
-  const [pixelRatio, setPixelRatio] = useState<number>(1);
+  // const [pixelRatio, setPixelRatio] = useState<number>(1);
+  const [pixelRatioX, setPixelRatioX] = useState<number>(1);
+  const [pixelRatioY, setPixelRatioY] = useState<number>(1);
+
+  const [viewX, setViewX] = useState<number>(1);
+  const [viewY, setViewY] = useState<number>(1);
+  const [viewWidth, setViewWidth] = useState<number>(1);
+  const [viewHeight, setViewHeight] = useState<number>(1);
   const devices = useCameraDevices();
   const device = devices.back;
+  const isIOS = Platform.OS === 'ios';
+  const screenWidth = Dimensions.get('window').width;
+  const screenHeight = Dimensions.get('window').height;
+  const xPercent = 24;
+  const yPercent = 44.5;
+  const xTop = screenWidth * xPercent / 100;
+  const yTop = screenHeight * yPercent / 100;
+  const xBottom = screenWidth - xTop;
+  const yBottom = screenHeight - yTop;
+  const onLayout = (event: any)=> {
+    const {x, y, width, height} = event.nativeEvent.layout;
+    setViewX(x);
+    setViewY(y);
+    setViewWidth(width);
+    setViewHeight(height);
+    // Alert.alert(`x = ${x}, y = ${y}, width = ${width}, height = ${height}`);
+  }
 
   const frameProcessor = useFrameProcessor((frame) => {
     'worklet';
@@ -40,12 +66,46 @@ const App = () => {
   }, []);
 
   const renderOverlay = () => {
-    const arr = ocr?.result?.blocks || [];
-    if (arr.length > 0)
-      console.log('ocr?.result.blocks = ', ocr?.result.blocks);
+    let arr = ocr?.result?.blocks || [];
+    // arr = arr.filter(item => {
+    //   const frame = item.frame;
+    //   const { x, y, boundingCenterX, boundingCenterY, width, height } = frame;
+    //   const left = boundingCenterX - width / 2;
+    //   const top = boundingCenterY - height / 2;
+    //   const xCheck = isIOS ? left * pixelRatioX : left - 80;
+    //   const yCheck = isIOS ? y * pixelRatioY : y - 120;
+    //   const check1 = xCheck >= xTop && yCheck >= yTop;
+    //   const check2 = xCheck <= xBottom && yCheck <= yBottom;
+    //   // return check1 && check2;
+    //   return true;
+    // })
+
     return (
-      <>
-        {ocr?.result.blocks.map((block) => {
+      <View style={[StyleSheet.absoluteFill]}>
+        {/* {arr.slice(0, 1).map((block) => {
+          const { x, y, boundingCenterX, boundingCenterY, width, height } = block.frame;
+          const left = boundingCenterX - width / 2;
+          const top = boundingCenterY - height / 2;
+          return(
+            <Text
+            style={{
+              fontSize: 12,
+              marginLeft: 100,
+              marginTop: 100,
+            }}
+          >
+            {`-value = ${value} \n -left = ${left} \n -top = ${top} \n -x = ${x} \n -y = ${y} \n -boundingCenterX = ${boundingCenterX} \n -boundingCenterY = ${boundingCenterY}`}
+          </Text>
+          );
+        })} */}
+        {arr.slice(0, 100).map((block) => {
+          const { x, y, boundingCenterX, boundingCenterY, width, height } = block.frame;
+          const left = boundingCenterX - width / 2;
+          const top = boundingCenterY - height / 2;
+          const left1 = block.frame.x;
+          const left2 = block.frame.x * pixelRatioX;
+          const top1 = block.frame.y;
+          const top2 = block.frame.y * pixelRatioY;
           return (
             <TouchableOpacity
               onPress={() => {
@@ -54,28 +114,70 @@ const App = () => {
               }}
               style={{
                 position: 'absolute',
-                left: block.frame.x * pixelRatio,
-                top: block.frame.y * pixelRatio,
-                backgroundColor: 'white',
-                padding: 8,
-                borderRadius: 6,
+                left: isIOS ? (block.frame.x * pixelRatioX) : Math.abs(left1 + left2) / 2,
+                top: isIOS ? (block.frame.y * pixelRatioY) : Math.abs(top1 + top2) / 2,
+                width: isIOS ? block.frame.width * pixelRatioX : block.frame.width,
+                height: isIOS ? block.frame.height * pixelRatioY : block.frame.width,
+                borderWidth: 1,
+                borderColor: 'yellow',
               }}
             >
               <Text
                 style={{
-                  fontSize: 25,
+                  fontSize: 16,
+                  color: 'red',
                   justifyContent: 'center',
                   textAlign: 'center',
                 }}
               >
-                {block.text}
+                {`${block.text}`}
               </Text>
             </TouchableOpacity>
           );
         })}
-      </>
+      </View>
     );
   };
+
+  const renderFrameView = () => {
+    return(
+      <View style={[StyleSheet.absoluteFill]}>
+        <View style={{ width: '100%', height: `${yPercent}%`, backgroundColor: 'black', opacity: 0.3 }} />
+        <View style={{ width: '100%', flex: 1, flexDirection: 'row' }}>
+          <View style={{ width: `${xPercent}%`, height: '100%', backgroundColor: 'black', opacity: 0.3  }} />
+          <View style={{ opacity: 0, flex: 1 }} onLayout={onLayout} />
+          <View style={{ width: `${xPercent}%`, height: '100%', backgroundColor: 'black', opacity: 0.3  }} />
+        </View>
+        <View style={{ width: '100%', height: `${yPercent}%`, backgroundColor: 'black', opacity: 0.3  }} />
+      </View>
+    );
+  }
+
+  const renderLine = () => {
+    const array1 = Array(Math.round(4)).fill(0);
+    return(
+      <View style={{ height: 100, flexDirection: 'row'}}>
+      {array1.map(item => {
+        return(
+          <View style={{ width: 100, height: 100, borderWidth: 1, borderColor: 'red'}}/>
+        )
+      })}
+    </View>
+    );
+  }
+
+  const renderSize = () => {
+    const array2 = Array(Math.round(10)).fill(0);
+    return(
+      <View style={[StyleSheet.absoluteFill]}>
+        <View style={[StyleSheet.absoluteFill]}>
+          {array2.map(item => {
+            return renderLine();
+          })}
+        </View>
+      </View>
+    );
+  }
 
   return device !== undefined && hasPermission ? (
     <>
@@ -84,16 +186,24 @@ const App = () => {
         frameProcessor={frameProcessor}
         device={device}
         isActive={true}
-        frameProcessorFps={5}
+        frameProcessorFps={20}
         onLayout={(event: LayoutChangeEvent) => {
-          setPixelRatio(
+          setPixelRatioX(
             event.nativeEvent.layout.width /
             PixelRatio.getPixelSizeForLayoutSize(
               event.nativeEvent.layout.width
             )
           );
+          setPixelRatioY(
+            event.nativeEvent.layout.height /
+            PixelRatio.getPixelSizeForLayoutSize(
+              event.nativeEvent.layout.height
+            )
+          );
         }}
       />
+      {renderFrameView()}
+      {renderSize()}
       {renderOverlay()}
     </>
   ) : (
