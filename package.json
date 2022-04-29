@@ -14,7 +14,7 @@
     "react-native": "0.68.1",
     "react-native-reanimated": "^2.8.0",
     "react-native-vision-camera": "^2.13.2",
-    "vision-camera-ocr": "^1.0.0"
+    "vision-camera-ocr2": "^1.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.12.9",

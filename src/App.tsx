@@ -14,7 +14,7 @@ import {
   Dimensions,
   Platform,
 } from 'react-native';
-import { OCRFrame, scanOCR } from 'vision-camera-ocr';
+import { OCRFrame, scanOCR } from 'vision-camera-ocr2';
 import {
   useCameraDevices,
   useFrameProcessor,
@@ -43,6 +43,10 @@ const App = () => {
   const yTop = screenHeight * yPercent / 100;
   const xBottom = screenWidth - xTop;
   const yBottom = screenHeight - yTop;
+
+  const [w, setW] = useState<number>(screenWidth);
+  const [h, setH] = useState<number>(screenHeight);
+
   const onLayout = (event: any)=> {
     const {x, y, width, height} = event.nativeEvent.layout;
     setViewX(x);
@@ -56,6 +60,14 @@ const App = () => {
     'worklet';
     const data = scanOCR(frame);
     runOnJS(setOcr)(data);
+    if (frame && frame.width && frame.width !== w) {
+      // setW(frame.width);
+      runOnJS(setW)(frame.width);
+    }
+    if (frame && frame.height && frame.height !== h) {
+      // setH(frame.height);
+      runOnJS(setH)(frame.height);
+    }
   }, []);
 
   useEffect(() => {
@@ -114,10 +126,10 @@ const App = () => {
               }}
               style={{
                 position: 'absolute',
-                left: isIOS ? (block.frame.x * pixelRatioX) : Math.abs(left1 + left2) / 2,
-                top: isIOS ? (block.frame.y * pixelRatioY) : Math.abs(top1 + top2) / 2,
-                width: isIOS ? block.frame.width * pixelRatioX : block.frame.width,
-                height: isIOS ? block.frame.height * pixelRatioY : block.frame.width,
+                left: isIOS ? block.frame.x * screenWidth / w : block.frame.x,
+                top: isIOS ? block.frame.y * screenHeight / h : block.frame.y,
+                width: block.frame.width,
+                height: block.frame.height,
                 borderWidth: 1,
                 borderColor: 'yellow',
               }}

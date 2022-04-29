@@ -450,7 +450,7 @@ PODS:
     - ReactCommon/turbomodule/core
     - Yoga
   - SocketRocket (0.6.0)
-  - vision-camera-ocr (1.0.0):
+  - vision-camera-ocr2 (1.0.2):
     - GoogleMLKit/TextRecognition (= 2.2.0)
     - React-Core
   - VisionCamera (2.13.2):
@@ -520,7 +520,7 @@ DEPENDENCIES:
   - React-runtimeexecutor (from `../node_modules/react-native/ReactCommon/runtimeexecutor`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
-  - vision-camera-ocr (from `../node_modules/vision-camera-ocr`)
+  - vision-camera-ocr2 (from `../node_modules/vision-camera-ocr2`)
   - VisionCamera (from `../node_modules/react-native-vision-camera`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
@@ -621,8 +621,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   RNReanimated:
     :path: "../node_modules/react-native-reanimated"
-  vision-camera-ocr:
-    :path: "../node_modules/vision-camera-ocr"
+  vision-camera-ocr2:
+    :path: "../node_modules/vision-camera-ocr2"
   VisionCamera:
     :path: "../node_modules/react-native-vision-camera"
   Yoga:
@@ -689,7 +689,7 @@ SPEC CHECKSUMS:
   ReactCommon: bf2888a826ceedf54b99ad1b6182d1bc4a8a3984
   RNReanimated: 64573e25e078ae6bec03b891586d50b9ec284393
   SocketRocket: fccef3f9c5cedea1353a9ef6ada904fde10d6608
-  vision-camera-ocr: 484b73b1917f608ff36d6c041b2e2a48dfd290e6
+  vision-camera-ocr2: de166e98331bdf44b187482be45c84a677e6c3f5
   VisionCamera: cd6d1bb690d34645513b2e70f7b77a258e29e0c2
   Yoga: 17cd9a50243093b547c1e539c749928dd68152da
   YogaKit: f782866e155069a2cca2517aafea43200b01fd5a
