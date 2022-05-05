@@ -80,8 +80,10 @@ const App = () => {
     setPhotoUri(uri);
     const data: any = await getImageSize(uri);
 
-    const imageWidth = photoData?.width || 0;
-    const imageHeight = photoData?.height || 0;
+    const isIOS = Platform.OS === 'ios';
+    const imageWidth = isIOS ? (data?.width || 0) : (photoData?.width || 0);
+    const imageHeight = isIOS ? (data?.height || 0) : (photoData?.height || 0);
+  
     console.log('imageWidth = ', imageWidth);
     console.log('imageHeight = ', imageHeight);
     console.log('imageWidth2 = ', photoData?.width);

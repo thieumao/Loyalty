@@ -361,7 +361,7 @@ PODS:
   - React-jsinspector (0.68.1)
   - React-logger (0.68.1):
     - glog
-  - react-native-image-editor (2.3.2):
+  - react-native-image-editor (2.3.0):
     - React
     - React-RCTImage
   - react-native-mlkit-ocr (0.2.5):
@@ -514,7 +514,7 @@ DEPENDENCIES:
   - React-jsiexecutor (from `../node_modules/react-native/ReactCommon/jsiexecutor`)
   - React-jsinspector (from `../node_modules/react-native/ReactCommon/jsinspector`)
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
-  - react-native-image-editor (from `../node_modules/react-native-community-image-editor2`)
+  - "react-native-image-editor (from `../node_modules/@react-native-community/image-editor`)"
   - react-native-mlkit-ocr (from `../node_modules/react-native-mlkit-ocr`)
   - React-perflogger (from `../node_modules/react-native/ReactCommon/reactperflogger`)
   - React-RCTActionSheet (from `../node_modules/react-native/Libraries/ActionSheetIOS`)
@@ -605,7 +605,7 @@ EXTERNAL SOURCES:
   React-logger:
     :path: "../node_modules/react-native/ReactCommon/logger"
   react-native-image-editor:
-    :path: "../node_modules/react-native-community-image-editor2"
+    :path: "../node_modules/@react-native-community/image-editor"
   react-native-mlkit-ocr:
     :path: "../node_modules/react-native-mlkit-ocr"
   React-perflogger:
@@ -687,7 +687,7 @@ SPEC CHECKSUMS:
   React-jsiexecutor: 4a4bae5671b064a2248a690cf75957669489d08c
   React-jsinspector: 218a2503198ff28a085f8e16622a8d8f507c8019
   React-logger: f79dd3cc0f9b44f5611c6c7862badd891a862cf8
-  react-native-image-editor: 01a90b4ca1e5615bd5d7cc3cec0d016c5ff1d018
+  react-native-image-editor: 9361a215c3991cafbe5e7f28cbbad6e72c9c2705
   react-native-mlkit-ocr: 02cde72ca7fb2c7e893a5fe4725e20a66b45adf9
   React-perflogger: 30ab8d6db10e175626069e742eead3ebe8f24fd5
   React-RCTActionSheet: 4b45da334a175b24dabe75f856b98fed3dfd6201
