@@ -1,5 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 import { runOnJS } from 'react-native-reanimated';
 import {
@@ -13,17 +13,20 @@ import {
   Clipboard,
   Dimensions,
   Platform,
+  Image,
+  NativeModules,
 } from 'react-native';
-import { OCRFrame, scanOCR } from 'vision-camera-ocr2';
+// import { OCRFrame, scanOCR } from 'vision-camera-ocr2';
 import {
   useCameraDevices,
   useFrameProcessor,
   Camera,
 } from 'react-native-vision-camera';
+import ImageEditor, { ImageCropData } from 'react-native-community-image-editor2';
 
 const App = () => {
   const [hasPermission, setHasPermission] = useState(false);
-  const [ocr, setOcr] = useState<OCRFrame>();
+  // const [ocr, setOcr] = useState<OCRFrame>();
   // const [pixelRatio, setPixelRatio] = useState<number>(1);
   const [pixelRatioX, setPixelRatioX] = useState<number>(1);
   const [pixelRatioY, setPixelRatioY] = useState<number>(1);
@@ -37,8 +40,8 @@ const App = () => {
   const isIOS = Platform.OS === 'ios';
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
-  const xPercent = 24;
-  const yPercent = 44.5;
+  const xPercent = 25;
+  const yPercent = 25;
   const xTop = screenWidth * xPercent / 100;
   const yTop = screenHeight * yPercent / 100;
   const xBottom = screenWidth - xTop;
@@ -46,9 +49,16 @@ const App = () => {
 
   const [w, setW] = useState<number>(screenWidth);
   const [h, setH] = useState<number>(screenHeight);
+  const [photo, setPhoto] = useState<string>('');
+  const [photoUri, setPhotoUri] = useState<string>('');
+  const [cropUri, setCropUri] = useState('');
+  const [text, setText] = useState('');
 
-  const onLayout = (event: any)=> {
-    const {x, y, width, height} = event.nativeEvent.layout;
+  const cameraRef = useRef();
+  const camera = useRef<Camera>(null);
+
+  const onLayout = (event: any) => {
+    const { x, y, width, height } = event.nativeEvent.layout;
     setViewX(x);
     setViewY(y);
     setViewWidth(width);
@@ -58,8 +68,8 @@ const App = () => {
 
   const frameProcessor = useFrameProcessor((frame) => {
     'worklet';
-    const data = scanOCR(frame);
-    runOnJS(setOcr)(data);
+    // const data = scanOCR(frame);
+    // runOnJS(setOcr)(data);
     if (frame && frame.width && frame.width !== w) {
       // setW(frame.width);
       runOnJS(setW)(frame.width);
@@ -77,116 +87,138 @@ const App = () => {
     })();
   }, []);
 
-  const renderOverlay = () => {
-    let arr = ocr?.result?.blocks || [];
-    // arr = arr.filter(item => {
-    //   const frame = item.frame;
-    //   const { x, y, boundingCenterX, boundingCenterY, width, height } = frame;
-    //   const left = boundingCenterX - width / 2;
-    //   const top = boundingCenterY - height / 2;
-    //   const xCheck = isIOS ? left * pixelRatioX : left - 80;
-    //   const yCheck = isIOS ? y * pixelRatioY : y - 120;
-    //   const check1 = xCheck >= xTop && yCheck >= yTop;
-    //   const check2 = xCheck <= xBottom && yCheck <= yBottom;
-    //   // return check1 && check2;
-    //   return true;
-    // })
+  const getImageSize = async (uri: string) => new Promise(resolve => {
+    Image.getSize(uri, (width, height) => {
+      // resolve({ width: width < height ? width: height, height: width < height ? height: width });
+      resolve({ width, height });
+    });
+  });
 
+  const onTakePhoto = async () => {
+    console.log('Click take photo');
+    const photoData = await camera.current?.takePhoto({
+      // photoCodec: 'jpeg',
+      qualityPrioritization: 'speed',
+      flash: 'off',
+      // quality: 90,
+      skipMetadata: true,
+    });
+    // const { path } = photoData;
+    const uri = `file://${photoData?.path}`;
+    setPhotoUri(uri);
+    setPhoto(JSON.stringify(photoData));
+    // console.log('onTakePhoto photo = ', photoData);
+    const imageSize: any = await getImageSize(uri);
+    const imageWidth = imageSize?.width || 0;
+    const imageHeight = imageSize?.height || 0;
+    console.log("uri = ", uri);
+    console.log("imageWidth = ", imageWidth);
+    console.log("imageHeight = ", imageHeight);
+
+    // const cropDataIos: ImageCropData = {
+    //   offset: { x: imageWidth / 4, y: imageHeight / 4 },
+    //   size: { width: imageWidth / 2, height: imageHeight / 2 },
+    //   displaySize: { width: imageWidth / 2, height: imageHeight / 2 },//{width: screenWidth / 2, height: screenHeight / 2},
+    //   resizeMode: 'cover',
+    // };
+    // const cropDataAndroid: ImageCropData = {
+    //   offset: { x: imageWidth / 2, y: imageHeight / 2 },
+    //   size: { width: imageWidth, height: imageHeight },
+    //   displaySize: { width: imageWidth, height: imageHeight },
+    //   resizeMode: 'cover',
+    // };
+    // const cropData: ImageCropData = isIOS ? cropDataIos : cropDataAndroid;
+    const w2 = w < h ? w : h;
+    const h2 = w < h ? h : w;
+    // const imageWidth1 = imageWidth < imageHeight ? imageWidth : imageHeight;
+    // const imageHeight1 = imageWidth < imageHeight ? imageHeight : imageWidth;
+    const cropData: ImageCropData = {
+      offset: { x: imageHeight / 4, y: imageWidth / 4 },
+      size: { width: imageHeight / 2, height: imageWidth / 2 },
+      // displaySize: { width: imageWidth / 2, height: imageHeight / 2 },//{width: screenWidth / 2, height: screenHeight / 2},
+      resizeMode: 'cover',
+    };
+    console.log('cropData = ', JSON.stringify(cropData));
+    const newUri = await ImageEditor.cropImage(uri, cropData);
+    const imageSize2: any = await getImageSize(newUri);
+    const imageWidth2 = imageSize2?.width || 0;
+    const imageHeight2 = imageSize2?.height || 0;
+    console.log("Cropped image newUri = ", newUri);
+    console.log("Cropped image imageWidth2 = ", imageWidth2);
+    console.log("Cropped image imageHeight2 = ", imageHeight2);
+    setCropUri(newUri);
+  }
+
+  const onClose = async () => {
+    setPhotoUri('');
+    setCropUri('');
+  }
+
+  const renderOverlay = () => {
+
+    const { StatusBarManager } = NativeModules;
+    // const top = isIOS ? screenHeight / 4 : screenHeight / 4 + StatusBarManager.HEIGHT / 2;
+    const top = screenHeight / 4;
     return (
       <View style={[StyleSheet.absoluteFill]}>
-        {/* {arr.slice(0, 1).map((block) => {
-          const { x, y, boundingCenterX, boundingCenterY, width, height } = block.frame;
-          const left = boundingCenterX - width / 2;
-          const top = boundingCenterY - height / 2;
-          return(
-            <Text
-            style={{
-              fontSize: 12,
-              marginLeft: 100,
-              marginTop: 100,
-            }}
-          >
-            {`-value = ${value} \n -left = ${left} \n -top = ${top} \n -x = ${x} \n -y = ${y} \n -boundingCenterX = ${boundingCenterX} \n -boundingCenterY = ${boundingCenterY}`}
-          </Text>
-          );
-        })} */}
-        {arr.slice(0, 100).map((block) => {
-          const { x, y, boundingCenterX, boundingCenterY, width, height } = block.frame;
-          const left = boundingCenterX - width / 2;
-          const top = boundingCenterY - height / 2;
-          const left1 = block.frame.x;
-          const left2 = block.frame.x * pixelRatioX;
-          const top1 = block.frame.y;
-          const top2 = block.frame.y * pixelRatioY;
-          return (
-            <TouchableOpacity
-              onPress={() => {
-                Clipboard.setString(block.text);
-                Alert.alert(`"${block.text}" copied to the clipboard`);
-              }}
-              style={{
-                position: 'absolute',
-                left: isIOS ? block.frame.x * screenWidth / w : block.frame.x,
-                top: isIOS ? block.frame.y * screenHeight / h : block.frame.y,
-                width: block.frame.width,
-                height: block.frame.height,
-                borderWidth: 1,
-                borderColor: 'yellow',
-              }}
-            >
-              <Text
-                style={{
-                  fontSize: 16,
-                  color: 'red',
-                  justifyContent: 'center',
-                  textAlign: 'center',
-                }}
-              >
-                {`${block.text}`}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+        {photoUri.length > 0 && (
+          <Image style={[{
+            position: 'absolute',
+            left: 0,
+            top: 0,
+            width: screenWidth,
+            height: screenHeight,
+            justifyContent: 'center',
+            alignItems: 'center',
+            opacity: 1
+          }]}
+            source={{ uri: photoUri }}
+            resizeMode="cover"
+          />
+        )}
+        {cropUri.length > 0 && (
+          <Image style={[{
+            position: 'absolute',
+            left: screenWidth / 4,
+            top: top,
+            width: screenWidth / 2,
+            height: screenHeight / 2,
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderWidth: 1,
+            borderColor: 'red'
+          }]}
+            source={{ uri: cropUri }}
+            resizeMode="cover"
+          />
+        )}
+        <Text style={{ marginTop: 10 }}>{`screenWidth = ${screenWidth}`}</Text>
+        <Text style={{ marginTop: 10 }}>{`screenHeight = ${screenHeight}`}</Text>
+        <Text style={{ marginTop: 10 }}>{`w = ${w}`}</Text>
+        <Text style={{ marginTop: 10 }}>{`h = ${h}`}</Text>
+        {/* <Text style={{ marginTop: 10 }}>{`photo = ${photo}`}</Text> */}
+        {/* <Text style={{ marginTop: 10 }}>{`photoUri = ${photoUri}`}</Text> */}
+        <Text style={{ marginTop: 10 }}>{`cropUri = ${cropUri}`}</Text>
+        <TouchableOpacity style={{ marginTop: 10 }} onPress={onTakePhoto}>
+          <Text style={{ marginTop: 10, color: 'red' }}>{`TAKE PHOTO`}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={{ marginTop: 10 }} onPress={onClose}>
+          <Text style={{ marginTop: 10, color: 'yellow' }}>{`CLOSE`}</Text>
+        </TouchableOpacity>
       </View>
     );
   };
 
   const renderFrameView = () => {
-    return(
+    return (
       <View style={[StyleSheet.absoluteFill]}>
         <View style={{ width: '100%', height: `${yPercent}%`, backgroundColor: 'black', opacity: 0.3 }} />
         <View style={{ width: '100%', flex: 1, flexDirection: 'row' }}>
-          <View style={{ width: `${xPercent}%`, height: '100%', backgroundColor: 'black', opacity: 0.3  }} />
+          <View style={{ width: `${xPercent}%`, height: '100%', backgroundColor: 'black', opacity: 0.3 }} />
           <View style={{ opacity: 0, flex: 1 }} onLayout={onLayout} />
-          <View style={{ width: `${xPercent}%`, height: '100%', backgroundColor: 'black', opacity: 0.3  }} />
+          <View style={{ width: `${xPercent}%`, height: '100%', backgroundColor: 'black', opacity: 0.3 }} />
         </View>
-        <View style={{ width: '100%', height: `${yPercent}%`, backgroundColor: 'black', opacity: 0.3  }} />
-      </View>
-    );
-  }
-
-  const renderLine = () => {
-    const array1 = Array(Math.round(4)).fill(0);
-    return(
-      <View style={{ height: 100, flexDirection: 'row'}}>
-      {array1.map(item => {
-        return(
-          <View style={{ width: 100, height: 100, borderWidth: 1, borderColor: 'red'}}/>
-        )
-      })}
-    </View>
-    );
-  }
-
-  const renderSize = () => {
-    const array2 = Array(Math.round(10)).fill(0);
-    return(
-      <View style={[StyleSheet.absoluteFill]}>
-        <View style={[StyleSheet.absoluteFill]}>
-          {array2.map(item => {
-            return renderLine();
-          })}
-        </View>
+        <View style={{ width: '100%', height: `${yPercent}%`, backgroundColor: 'black', opacity: 0.3 }} />
       </View>
     );
   }
@@ -194,11 +226,15 @@ const App = () => {
   return device !== undefined && hasPermission ? (
     <>
       <Camera
+        ref={camera}
         style={[StyleSheet.absoluteFill]}
         frameProcessor={frameProcessor}
         device={device}
         isActive={true}
-        frameProcessorFps={20}
+        enableHighQualityPhotos={true}
+        photo={true}
+        orientation="portrait"
+        frameProcessorFps={5}
         onLayout={(event: LayoutChangeEvent) => {
           setPixelRatioX(
             event.nativeEvent.layout.width /
@@ -215,7 +251,6 @@ const App = () => {
         }}
       />
       {renderFrameView()}
-      {renderSize()}
       {renderOverlay()}
     </>
   ) : (
