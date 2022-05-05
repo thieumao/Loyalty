@@ -1,20 +1,13 @@
 /* eslint-disable react-native/no-inline-styles */
 import React, { useState, useEffect, useRef } from 'react';
-
 import { runOnJS } from 'react-native-reanimated';
 import {
   StyleSheet,
   View,
   Text,
-  LayoutChangeEvent,
-  PixelRatio,
   TouchableOpacity,
-  Alert,
-  Clipboard,
   Dimensions,
-  Platform,
   Image,
-  NativeModules,
 } from 'react-native';
 // import { OCRFrame, scanOCR } from 'vision-camera-ocr2';
 import {
@@ -22,7 +15,7 @@ import {
   useFrameProcessor,
   Camera,
 } from 'react-native-vision-camera';
-import ImageEditor, { ImageCropData } from 'react-native-community-image-editor2';
+import ImageEditor, { ImageCropData } from '@react-native-community/image-editor';
 import MlkitOcr from 'react-native-mlkit-ocr';
 
 const App = () => {
@@ -30,11 +23,10 @@ const App = () => {
 
   const devices = useCameraDevices();
   const device = devices.back;
-  const isIOS = Platform.OS === 'ios';
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
-  const xPercent = 24;
-  const yPercent = 36;
+  const xPercent = 20;
+  const yPercent = 44;
   const left = screenWidth * xPercent / 100;
   const top = screenHeight * yPercent / 100;
   const width = screenWidth * (100 - 2 * xPercent) / 100;
@@ -69,27 +61,18 @@ const App = () => {
     })();
   }, []);
 
-  const getImageSize = async (uri: string) => new Promise(resolve => {
-    Image.getSize(uri, (width, height) => {
-      // resolve({ width: width < height ? width: height, height: width < height ? height: width });
-      resolve({ width, height });
-    });
-  });
-
   const onTakePhoto = async () => {
     console.log('Click take photo');
     const photoData = await camera.current?.takePhoto({
-      // photoCodec: 'jpeg',
       qualityPrioritization: 'speed',
       flash: 'off',
-      // quality: 90,
       skipMetadata: true,
     });
     const uri = `file://${photoData?.path}`;
     setPhotoUri(uri);
-    const imageSize: any = await getImageSize(uri);
-    const imageWidth = imageSize?.width || 0;
-    const imageHeight = imageSize?.height || 0;
+
+    const imageWidth = photoData?.width || 0;
+    const imageHeight = photoData?.height || 0;
 
     const left2 = imageWidth * xPercent / 100;
     const top2 = imageHeight * yPercent / 100;
@@ -97,10 +80,11 @@ const App = () => {
     const height2 = imageHeight * (100 - 2 * yPercent) / 100;
 
     const cropData: ImageCropData = {
-      offset: { x: isIOS ? left2 : top2, y: isIOS ? top2 : left2 },
-      size: { width: isIOS ? width2 : height2, height: isIOS ? height2 : width2 },
+      offset: { x: left2, y: top2 },
+      size: { width: width2, height: height2 },
       resizeMode: 'cover',
     };
+
     const newUri = await ImageEditor.cropImage(uri, cropData);
     setCropUri(newUri);
 
@@ -161,8 +145,6 @@ const App = () => {
             position: 'absolute',
             justifyContent: 'center',
             alignItems: 'center',
-            // borderWidth: 1,
-            // borderColor: 'red',
             textAlign: 'center',
             color: 'red'
           }}>
@@ -181,8 +163,8 @@ const App = () => {
           </TouchableOpacity>
         )}
         {photoUri.length > 0 && (
-          <TouchableOpacity style={{ 
-            top: 48, 
+          <TouchableOpacity style={{
+            top: 48,
             right: 48,
             position: 'absolute',
             justifyContent: 'center',
