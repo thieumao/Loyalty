@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Dimensions,
   Image,
+  Platform,
 } from 'react-native';
 // import { OCRFrame, scanOCR } from 'vision-camera-ocr2';
 import {
@@ -25,8 +26,8 @@ const App = () => {
   const device = devices.back;
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
-  const xPercent = 20;
-  const yPercent = 44;
+  const xPercent = 25;
+  const yPercent = 25;
   const left = screenWidth * xPercent / 100;
   const top = screenHeight * yPercent / 100;
   const width = screenWidth * (100 - 2 * xPercent) / 100;
@@ -61,6 +62,13 @@ const App = () => {
     })();
   }, []);
 
+  const getImageSize = async (uri: string) => new Promise(resolve => {
+    Image.getSize(uri, (width, height) => {
+      // resolve({ width: width < height ? width: height, height: width < height ? height: width });
+      resolve({ width, height });
+    });
+  });
+
   const onTakePhoto = async () => {
     console.log('Click take photo');
     const photoData = await camera.current?.takePhoto({
@@ -70,20 +78,32 @@ const App = () => {
     });
     const uri = `file://${photoData?.path}`;
     setPhotoUri(uri);
+    const data: any = await getImageSize(uri);
 
     const imageWidth = photoData?.width || 0;
     const imageHeight = photoData?.height || 0;
+    console.log('imageWidth = ', imageWidth);
+    console.log('imageHeight = ', imageHeight);
+    console.log('imageWidth2 = ', photoData?.width);
+    console.log('imageHeight2 = ', photoData?.height);
 
     const left2 = imageWidth * xPercent / 100;
     const top2 = imageHeight * yPercent / 100;
     const width2 = imageWidth * (100 - 2 * xPercent) / 100;
     const height2 = imageHeight * (100 - 2 * yPercent) / 100;
 
-    const cropData: ImageCropData = {
+    // const isIOS = Platform.OS === 'ios';
+    // const cropDataAndroid: ImageCropData = {
+    //   offset: { x: top2, y: left2 },
+    //   size: { width: height2, height: width2 },
+    //   resizeMode: 'cover',
+    // };
+    const cropDataIos: ImageCropData = {
       offset: { x: left2, y: top2 },
       size: { width: width2, height: height2 },
       resizeMode: 'cover',
     };
+    const cropData: ImageCropData = cropDataIos; //isIOS ? cropDataIos : cropDataAndroid;
 
     const newUri = await ImageEditor.cropImage(uri, cropData);
     setCropUri(newUri);
