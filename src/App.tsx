@@ -15,17 +15,19 @@ import {
   useCameraDevices,
   useFrameProcessor,
   Camera,
+  CameraDeviceFormat,
 } from 'react-native-vision-camera';
 import ImageEditor, { ImageCropData } from '@react-native-community/image-editor';
 import MlkitOcr from 'react-native-mlkit-ocr';
 
 const App = () => {
+  const round = (num: number) => Math.round(num * 1000) / 1000;
   const [hasPermission, setHasPermission] = useState(false);
 
   const devices = useCameraDevices();
   const device = devices.back;
   const screenWidth = Dimensions.get('window').width;
-  const screenHeight = Dimensions.get('window').height;
+  const screenHeight = screenWidth * 16 / 9;//Dimensions.get('window').height;
   const xPercent = 25;
   const yPercent = 25;
   const left = screenWidth * xPercent / 100;
@@ -81,16 +83,31 @@ const App = () => {
     const data: any = await getImageSize(uri);
 
     const isIOS = Platform.OS === 'ios';
+    // hinh chu nhat doc
+    // const imageWidth = isIOS ? (data?.width || 0) : (photoData?.width || 0);
+    // const imageHeight = isIOS ? (data?.height || 0) : (photoData?.height || 0);
+    // hinh chu nhat ngang
     const imageWidth = isIOS ? (data?.width || 0) : (photoData?.width || 0);
     const imageHeight = isIOS ? (data?.height || 0) : (photoData?.height || 0);
   
-    console.log('imageWidth = ', imageWidth);
-    console.log('imageHeight = ', imageHeight);
+    console.log('number of format = ', device?.formats.length);
+    console.log('format = ', JSON.stringify(device?.formats?.map(item => {
+      return {
+        photoHeight: item.photoHeight,
+        photoWidth: item.photoWidth,
+        radio: item.photoHeight > 0 ? item.photoWidth / item.photoHeight : 0
+      }
+    })));
+    console.log('screenWidth = ', screenWidth);
+    console.log('screenHeight = ', screenHeight);
+    console.log('imageWidth = ', data?.width);
+    console.log('imageHeight = ', data?.height);
     console.log('imageWidth2 = ', photoData?.width);
     console.log('imageHeight2 = ', photoData?.height);
 
     const left2 = imageWidth * xPercent / 100;
     const top2 = imageHeight * yPercent / 100;
+
     const width2 = imageWidth * (100 - 2 * xPercent) / 100;
     const height2 = imageHeight * (100 - 2 * yPercent) / 100;
 
@@ -103,6 +120,7 @@ const App = () => {
     const cropDataIos: ImageCropData = {
       offset: { x: left2, y: top2 },
       size: { width: width2, height: height2 },
+      // displaySize: { width: width2, height: height2 },
       resizeMode: 'cover',
     };
     const cropData: ImageCropData = cropDataIos; //isIOS ? cropDataIos : cropDataAndroid;
@@ -129,13 +147,12 @@ const App = () => {
       <View style={[StyleSheet.absoluteFill]}>
         {photoUri.length > 0 && (
           <Image style={[{
-            position: 'absolute',
             left: 0,
             top: 0,
-            width: screenWidth,
-            height: screenHeight,
-            justifyContent: 'center',
-            alignItems: 'center',
+            width: screenWidth, 
+            height: screenWidth * 16 / 9,
+            // width: screenWidth,
+            // height: screenHeight,
             opacity: 1
           }]}
             source={{ uri: photoUri }}
@@ -213,22 +230,62 @@ const App = () => {
     );
   }
 
+  // const format: CameraDeviceFormat = {
+  //   photoHeight: height,
+  //   photoWidth: width,
+  //   videoHeight: height,
+  //   videoWidth: width,
+  //   maxISO: 100,
+  //   minISO: 0,
+  //   fieldOfView: 10,
+  //   maxZoom: 100,
+  //   colorSpaces: [],
+  //   supportsVideoHDR: false,
+  //   supportsPhotoHDR: true,
+  //   frameRateRanges: [],
+  //   autoFocusSystem: 'contrast-detection',
+  //   videoStabilizationModes: [],
+  //   pixelFormat: '420f'
+  // }
+  const formats = device?.formats || [];
+  const filterFormats = device?.formats?.filter(item => {
+    const radio = round(item.photoHeight > 0 ? item.photoWidth / item.photoHeight : 0);
+    const radio169 = round(16 / 9);
+    return radio == radio169;
+    // return {
+    //   photoHeight: item.photoHeight,
+    //   photoWidth: item.photoWidth,
+    //   radio: item.photoHeight > 0 ? item.photoWidth / item.photoHeight : 0
+    // }
+  }) || [];
+  const format = filterFormats.length > 0 ? filterFormats[0] : formats[0];
   return device !== undefined && hasPermission ? (
-    <>
+    <View style={{
+      width: screenWidth,
+      height: screenHeight,
+    }}>
       <Camera
         ref={camera}
-        style={[StyleSheet.absoluteFill]}
-        frameProcessor={frameProcessor}
+        style={{
+          left: 0,
+          top: 0,
+          width: screenWidth, 
+          height: screenWidth * 16 / 9}}
+        // style={[StyleSheet.absoluteFill]}
+        // frameProcessor={frameProcessor}
         device={device}
         isActive={true}
         enableHighQualityPhotos={true}
         photo={true}
         orientation="portrait"
-        frameProcessorFps={5}
+        // frameProcessorFps={5}
+        // torch="on"
+        // enableZoomGesture={true}
+        format={format}
       />
       {photoUri.length === 0 && renderFrameView()}
       {renderOverlay()}
-    </>
+    </View>
   ) : (
     <View>
       <Text>No available cameras</Text>
