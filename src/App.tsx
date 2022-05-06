@@ -31,7 +31,7 @@ const App = () => {
   const device = devices.back;
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = screenWidth * 16 / 9;//Dimensions.get('window').height;
-  const xPercent = 20;
+  const xPercent = 16;
   const yPercent = 40;
   const left = screenWidth * xPercent / 100;
   const top = screenHeight * yPercent / 100;
@@ -105,23 +105,11 @@ const App = () => {
     setPhotoUri(uri);
     console.log('uri = ', uri)
     const data: any = await getImageSize(uri);
-
     const isIOS = Platform.OS === 'ios';
-    // hinh chu nhat doc
-    // const imageWidth = isIOS ? (data?.width || 0) : (photoData?.width || 0);
-    // const imageHeight = isIOS ? (data?.height || 0) : (photoData?.height || 0);
-    // hinh chu nhat ngang
-    const imageWidth = isIOS ? (data?.width || 0) : (photoData?.width || 0);
-    const imageHeight = isIOS ? (data?.height || 0) : (photoData?.height || 0);
+
+    const imageWidth = data?.width || 0; //isIOS ? (data?.width || 0) : (photoData?.width || 0);
+    const imageHeight = data?.height || 0; //isIOS ? (data?.height || 0) : (photoData?.height || 0);
   
-    // console.log('number of format = ', device?.formats.length);
-    // console.log('format = ', JSON.stringify(device?.formats?.map(item => {
-    //   return {
-    //     photoHeight: item.photoHeight,
-    //     photoWidth: item.photoWidth,
-    //     radio: item.photoHeight > 0 ? item.photoWidth / item.photoHeight : 0
-    //   }
-    // })));
     console.log('screenWidth = ', screenWidth);
     console.log('screenHeight = ', screenHeight);
     console.log('imageWidth = ', data?.width);
@@ -129,30 +117,26 @@ const App = () => {
     console.log('imageWidth2 = ', photoData?.width);
     console.log('imageHeight2 = ', photoData?.height);
 
-    // const left2 = imageWidth * xPercent / 100;
-    // const top2 = imageHeight * yPercent / 100;
-    // const width2 = imageWidth * (100 - 2 * xPercent) / 100;
-    // const height2 = imageHeight * (100 - 2 * yPercent) / 100;
+    // const left2 = isIOS ? imageWidth * xPercent / 100 : imageWidth * yPercent / 100;
+    // const top2 = isIOS ?  imageHeight * yPercent / 100 : imageHeight * xPercent / 100;
+    // const width2 = isIOS ? imageWidth * (100 - 2 * xPercent) / 100 : imageWidth * (100 - 2 * yPercent) / 100;
+    // const height2 = isIOS ? imageHeight * (100 - 2 * yPercent) / 100 : imageHeight * (100 - 2 * xPercent) / 100;
+    const left2 = imageWidth * xPercent / 100;
+    const top2 = imageHeight * yPercent / 100;
+    const width2 = imageWidth * (100 - 2 * xPercent) / 100;
+    const height2 = imageHeight * (100 - 2 * yPercent) / 100;
 
-    const left2 = isIOS ? imageWidth * xPercent / 100 : imageWidth * yPercent / 100;
-    const top2 = isIOS ?  imageHeight * yPercent / 100 : imageHeight * xPercent / 100;
-    const width2 = isIOS ? imageWidth * (100 - 2 * xPercent) / 100 : imageWidth * (100 - 2 * yPercent) / 100;
-    const height2 = isIOS ? imageHeight * (100 - 2 * yPercent) / 100 : imageHeight * (100 - 2 * xPercent) / 100;
-
-    // const isIOS = Platform.OS === 'ios';
-    // const cropDataAndroid: ImageCropData = {
-    //   offset: { x: top2, y: left2 },
-    //   size: { width: height2, height: width2 },
-    //   resizeMode: 'cover',
-    // };
     const cropDataIos: ImageCropData = {
       offset: { x: left2, y: top2 },
       size: { width: width2, height: height2 },
-      // displaySize: { width: width2, height: height2 },
-      resizeMode: 'cover',
+    };
+    const cropDataAndroid: ImageCropData = {
+      offset: { x: top2, y: left2 },
+      size: { width: height2, height: width2 },
     };
     console.log('cropDataIos = ', JSON.stringify(cropDataIos));
-    const cropData: ImageCropData = cropDataIos; //isIOS ? cropDataIos : cropDataAndroid;
+    console.log('cropDataAndroid = ', JSON.stringify(cropDataAndroid));
+    const cropData: ImageCropData = isIOS ? cropDataIos : cropDataAndroid;
 
     const newUri = await ImageEditor.cropImage(uri, cropData);
     await CameraRoll.save(newUri, { type: 'photo' });
