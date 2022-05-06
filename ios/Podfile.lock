@@ -361,6 +361,8 @@ PODS:
   - React-jsinspector (0.68.1)
   - React-logger (0.68.1):
     - glog
+  - react-native-cameraroll (4.1.2):
+    - React-Core
   - react-native-image-editor (2.3.0):
     - React
     - React-RCTImage
@@ -514,6 +516,7 @@ DEPENDENCIES:
   - React-jsiexecutor (from `../node_modules/react-native/ReactCommon/jsiexecutor`)
   - React-jsinspector (from `../node_modules/react-native/ReactCommon/jsinspector`)
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
+  - "react-native-cameraroll (from `../node_modules/@react-native-community/cameraroll`)"
   - "react-native-image-editor (from `../node_modules/@react-native-community/image-editor`)"
   - react-native-mlkit-ocr (from `../node_modules/react-native-mlkit-ocr`)
   - React-perflogger (from `../node_modules/react-native/ReactCommon/reactperflogger`)
@@ -604,6 +607,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/jsinspector"
   React-logger:
     :path: "../node_modules/react-native/ReactCommon/logger"
+  react-native-cameraroll:
+    :path: "../node_modules/@react-native-community/cameraroll"
   react-native-image-editor:
     :path: "../node_modules/@react-native-community/image-editor"
   react-native-mlkit-ocr:
@@ -687,6 +692,7 @@ SPEC CHECKSUMS:
   React-jsiexecutor: 4a4bae5671b064a2248a690cf75957669489d08c
   React-jsinspector: 218a2503198ff28a085f8e16622a8d8f507c8019
   React-logger: f79dd3cc0f9b44f5611c6c7862badd891a862cf8
+  react-native-cameraroll: 2957f2bce63ae896a848fbe0d5352c1bd4d20866
   react-native-image-editor: 9361a215c3991cafbe5e7f28cbbad6e72c9c2705
   react-native-mlkit-ocr: 02cde72ca7fb2c7e893a5fe4725e20a66b45adf9
   React-perflogger: 30ab8d6db10e175626069e742eead3ebe8f24fd5

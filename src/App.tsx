@@ -9,6 +9,8 @@ import {
   Dimensions,
   Image,
   Platform,
+  PermissionsAndroid,
+  Alert,
 } from 'react-native';
 // import { OCRFrame, scanOCR } from 'vision-camera-ocr2';
 import {
@@ -19,6 +21,7 @@ import {
 } from 'react-native-vision-camera';
 import ImageEditor, { ImageCropData } from '@react-native-community/image-editor';
 import MlkitOcr from 'react-native-mlkit-ocr';
+import CameraRoll from '@react-native-community/cameraroll';
 
 const App = () => {
   const round = (num: number) => Math.round(num * 1000) / 1000;
@@ -28,8 +31,8 @@ const App = () => {
   const device = devices.back;
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = screenWidth * 16 / 9;//Dimensions.get('window').height;
-  const xPercent = 25;
-  const yPercent = 25;
+  const xPercent = 15;
+  const yPercent = 35;
   const left = screenWidth * xPercent / 100;
   const top = screenHeight * yPercent / 100;
   const width = screenWidth * (100 - 2 * xPercent) / 100;
@@ -71,7 +74,26 @@ const App = () => {
     });
   });
 
+  const requestSavePermission = async (): Promise<boolean> => {
+    if (Platform.OS !== 'android') return true;
+  
+    const permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
+    if (permission == null) return false;
+    let hasPermission = await PermissionsAndroid.check(permission);
+    if (!hasPermission) {
+      const permissionRequestResult = await PermissionsAndroid.request(permission);
+      hasPermission = permissionRequestResult === 'granted';
+    }
+    return hasPermission;
+  };
+
   const onTakePhoto = async () => {
+    const hasPermission = await requestSavePermission();
+    if (!hasPermission) {
+      Alert.alert('Permission denied!', 'Vision Camera does not have permission to save the media to your camera roll.');
+      return;
+    }
+
     console.log('Click take photo');
     const photoData = await camera.current?.takePhoto({
       qualityPrioritization: 'speed',
@@ -79,7 +101,9 @@ const App = () => {
       skipMetadata: true,
     });
     const uri = `file://${photoData?.path}`;
+    await CameraRoll.save(uri, { type: 'photo' });
     setPhotoUri(uri);
+    console.log('uri = ', uri)
     const data: any = await getImageSize(uri);
 
     const isIOS = Platform.OS === 'ios';
@@ -90,14 +114,14 @@ const App = () => {
     const imageWidth = isIOS ? (data?.width || 0) : (photoData?.width || 0);
     const imageHeight = isIOS ? (data?.height || 0) : (photoData?.height || 0);
   
-    console.log('number of format = ', device?.formats.length);
-    console.log('format = ', JSON.stringify(device?.formats?.map(item => {
-      return {
-        photoHeight: item.photoHeight,
-        photoWidth: item.photoWidth,
-        radio: item.photoHeight > 0 ? item.photoWidth / item.photoHeight : 0
-      }
-    })));
+    // console.log('number of format = ', device?.formats.length);
+    // console.log('format = ', JSON.stringify(device?.formats?.map(item => {
+    //   return {
+    //     photoHeight: item.photoHeight,
+    //     photoWidth: item.photoWidth,
+    //     radio: item.photoHeight > 0 ? item.photoWidth / item.photoHeight : 0
+    //   }
+    // })));
     console.log('screenWidth = ', screenWidth);
     console.log('screenHeight = ', screenHeight);
     console.log('imageWidth = ', data?.width);
@@ -126,7 +150,9 @@ const App = () => {
     const cropData: ImageCropData = cropDataIos; //isIOS ? cropDataIos : cropDataAndroid;
 
     const newUri = await ImageEditor.cropImage(uri, cropData);
+    await CameraRoll.save(newUri, { type: 'photo' });
     setCropUri(newUri);
+    console.log('newUri = ', newUri)
 
     const resultFromFile = await MlkitOcr.detectFromUri(newUri);
     if (resultFromFile) {
@@ -281,7 +307,7 @@ const App = () => {
         // frameProcessorFps={5}
         // torch="on"
         // enableZoomGesture={true}
-        format={format}
+        // format={format}
       />
       {photoUri.length === 0 && renderFrameView()}
       {renderOverlay()}
