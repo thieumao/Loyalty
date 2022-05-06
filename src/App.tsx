@@ -30,7 +30,7 @@ const App = () => {
   const devices = useCameraDevices();
   const device = devices.back;
   const screenWidth = Dimensions.get('window').width;
-  const screenHeight = screenWidth * 16 / 9;//Dimensions.get('window').height;
+  const screenHeight = Dimensions.get('window').height;
   const xPercent = 16;
   const yPercent = 40;
   const left = screenWidth * xPercent / 100;
@@ -165,7 +165,7 @@ const App = () => {
             left: 0,
             top: 0,
             width: screenWidth, 
-            height: screenWidth * 16 / 9,
+            height: screenHeight ,
             // width: screenWidth,
             // height: screenHeight,
             opacity: 1
@@ -285,7 +285,7 @@ const App = () => {
           left: 0,
           top: 0,
           width: screenWidth, 
-          height: screenWidth * 16 / 9}}
+          height: screenHeight}}
         // style={[StyleSheet.absoluteFill]}
         // frameProcessor={frameProcessor}
         device={device}
