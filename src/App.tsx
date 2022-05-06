@@ -31,8 +31,8 @@ const App = () => {
   const device = devices.back;
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = screenWidth * 16 / 9;//Dimensions.get('window').height;
-  const xPercent = 15;
-  const yPercent = 35;
+  const xPercent = 20;
+  const yPercent = 40;
   const left = screenWidth * xPercent / 100;
   const top = screenHeight * yPercent / 100;
   const width = screenWidth * (100 - 2 * xPercent) / 100;
@@ -129,11 +129,15 @@ const App = () => {
     console.log('imageWidth2 = ', photoData?.width);
     console.log('imageHeight2 = ', photoData?.height);
 
-    const left2 = imageWidth * xPercent / 100;
-    const top2 = imageHeight * yPercent / 100;
+    // const left2 = imageWidth * xPercent / 100;
+    // const top2 = imageHeight * yPercent / 100;
+    // const width2 = imageWidth * (100 - 2 * xPercent) / 100;
+    // const height2 = imageHeight * (100 - 2 * yPercent) / 100;
 
-    const width2 = imageWidth * (100 - 2 * xPercent) / 100;
-    const height2 = imageHeight * (100 - 2 * yPercent) / 100;
+    const left2 = isIOS ? imageWidth * xPercent / 100 : imageWidth * yPercent / 100;
+    const top2 = isIOS ?  imageHeight * yPercent / 100 : imageHeight * xPercent / 100;
+    const width2 = isIOS ? imageWidth * (100 - 2 * xPercent) / 100 : imageWidth * (100 - 2 * yPercent) / 100;
+    const height2 = isIOS ? imageHeight * (100 - 2 * yPercent) / 100 : imageHeight * (100 - 2 * xPercent) / 100;
 
     // const isIOS = Platform.OS === 'ios';
     // const cropDataAndroid: ImageCropData = {
@@ -147,6 +151,7 @@ const App = () => {
       // displaySize: { width: width2, height: height2 },
       resizeMode: 'cover',
     };
+    console.log('cropDataIos = ', JSON.stringify(cropDataIos));
     const cropData: ImageCropData = cropDataIos; //isIOS ? cropDataIos : cropDataAndroid;
 
     const newUri = await ImageEditor.cropImage(uri, cropData);
