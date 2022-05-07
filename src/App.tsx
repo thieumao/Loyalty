@@ -1,6 +1,5 @@
 /* eslint-disable react-native/no-inline-styles */
 import React, { useState, useEffect, useRef } from 'react';
-import { runOnJS } from 'react-native-reanimated';
 import {
   StyleSheet,
   View,
@@ -12,12 +11,9 @@ import {
   PermissionsAndroid,
   Alert,
 } from 'react-native';
-// import { OCRFrame, scanOCR } from 'vision-camera-ocr2';
 import {
   useCameraDevices,
-  useFrameProcessor,
   Camera,
-  CameraDeviceFormat,
 } from 'react-native-vision-camera';
 import ImageEditor, { ImageCropData } from '@react-native-community/image-editor';
 import MlkitOcr from 'react-native-mlkit-ocr';
@@ -31,34 +27,23 @@ const App = () => {
   const device = devices.back;
   const screenWidth = Dimensions.get('window').width;
   const screenHeight = Dimensions.get('window').height;
-  const xPercent = 16;
-  const yPercent = 40;
-  const left = screenWidth * xPercent / 100;
-  const top = screenHeight * yPercent / 100;
-  const width = screenWidth * (100 - 2 * xPercent) / 100;
-  const height = screenHeight * (100 - 2 * yPercent) / 100;
 
-  const [w, setW] = useState<number>(screenWidth);
-  const [h, setH] = useState<number>(screenHeight);
+  const wPixel = 200; // px
+  const hPixel = 100; // px
+  const wPercent = wPixel / screenWidth * 100; // %
+  const hPercent = hPixel / screenHeight * 100; // %
+  const xPercent = (100 - wPercent) / 2; // %
+  const yPercent = (100 - hPercent) / 2; // %
+  const left = screenWidth * xPercent / 100; // px
+  const top = screenHeight * yPercent / 100; // px
+  const width = screenWidth * wPercent / 100; // px
+  const height = screenHeight * hPercent / 100; // px
+
   const [photoUri, setPhotoUri] = useState<string>('');
   const [cropUri, setCropUri] = useState('');
   const [text, setText] = useState('');
 
   const camera = useRef<Camera>(null);
-
-  const frameProcessor = useFrameProcessor((frame) => {
-    'worklet';
-    // const data = scanOCR(frame);
-    // runOnJS(setOcr)(data);
-    if (frame && frame.width && frame.width !== w) {
-      // setW(frame.width);
-      runOnJS(setW)(frame.width);
-    }
-    if (frame && frame.height && frame.height !== h) {
-      // setH(frame.height);
-      runOnJS(setH)(frame.height);
-    }
-  }, []);
 
   useEffect(() => {
     (async () => {
@@ -76,7 +61,7 @@ const App = () => {
 
   const requestSavePermission = async (): Promise<boolean> => {
     if (Platform.OS !== 'android') return true;
-  
+
     const permission = PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE;
     if (permission == null) return false;
     let hasPermission = await PermissionsAndroid.check(permission);
@@ -101,30 +86,18 @@ const App = () => {
       skipMetadata: true,
     });
     const uri = `file://${photoData?.path}`;
-    await CameraRoll.save(uri, { type: 'photo' });
+    // await CameraRoll.save(uri, { type: 'photo' });
     setPhotoUri(uri);
-    console.log('uri = ', uri)
     const data: any = await getImageSize(uri);
     const isIOS = Platform.OS === 'ios';
 
     const imageWidth = data?.width || 0; //isIOS ? (data?.width || 0) : (photoData?.width || 0);
     const imageHeight = data?.height || 0; //isIOS ? (data?.height || 0) : (photoData?.height || 0);
-  
-    console.log('screenWidth = ', screenWidth);
-    console.log('screenHeight = ', screenHeight);
-    console.log('imageWidth = ', data?.width);
-    console.log('imageHeight = ', data?.height);
-    console.log('imageWidth2 = ', photoData?.width);
-    console.log('imageHeight2 = ', photoData?.height);
 
-    // const left2 = isIOS ? imageWidth * xPercent / 100 : imageWidth * yPercent / 100;
-    // const top2 = isIOS ?  imageHeight * yPercent / 100 : imageHeight * xPercent / 100;
-    // const width2 = isIOS ? imageWidth * (100 - 2 * xPercent) / 100 : imageWidth * (100 - 2 * yPercent) / 100;
-    // const height2 = isIOS ? imageHeight * (100 - 2 * yPercent) / 100 : imageHeight * (100 - 2 * xPercent) / 100;
     const left2 = imageWidth * xPercent / 100;
     const top2 = imageHeight * yPercent / 100;
-    const width2 = imageWidth * (100 - 2 * xPercent) / 100;
-    const height2 = imageHeight * (100 - 2 * yPercent) / 100;
+    const width2 = imageWidth * wPercent / 100;
+    const height2 = imageHeight * hPercent / 100;
 
     const cropDataIos: ImageCropData = {
       offset: { x: left2, y: top2 },
@@ -134,14 +107,11 @@ const App = () => {
       offset: { x: top2, y: left2 },
       size: { width: height2, height: width2 },
     };
-    console.log('cropDataIos = ', JSON.stringify(cropDataIos));
-    console.log('cropDataAndroid = ', JSON.stringify(cropDataAndroid));
     const cropData: ImageCropData = isIOS ? cropDataIos : cropDataAndroid;
 
     const newUri = await ImageEditor.cropImage(uri, cropData);
-    await CameraRoll.save(newUri, { type: 'photo' });
+    // await CameraRoll.save(newUri, { type: 'photo' });
     setCropUri(newUri);
-    console.log('newUri = ', newUri)
 
     const resultFromFile = await MlkitOcr.detectFromUri(newUri);
     if (resultFromFile) {
@@ -164,10 +134,8 @@ const App = () => {
           <Image style={[{
             left: 0,
             top: 0,
-            width: screenWidth, 
-            height: screenHeight ,
-            // width: screenWidth,
-            // height: screenHeight,
+            width: screenWidth,
+            height: screenHeight,
             opacity: 1
           }]}
             source={{ uri: photoUri }}
@@ -234,46 +202,29 @@ const App = () => {
   const renderFrameView = () => {
     return (
       <View style={[StyleSheet.absoluteFill]}>
-        <View style={{ width: '100%', height: `${yPercent}%`, backgroundColor: 'black', opacity: 0.3 }} />
+        {/* <View style={{ width: '100%', height: `${yPercent}%`, backgroundColor: 'black', opacity: 0.3 }} />
         <View style={{ width: '100%', flex: 1, flexDirection: 'row' }}>
           <View style={{ width: `${xPercent}%`, height: '100%', backgroundColor: 'black', opacity: 0.3 }} />
           <View style={{ opacity: 0, flex: 1 }} />
           <View style={{ width: `${xPercent}%`, height: '100%', backgroundColor: 'black', opacity: 0.3 }} />
         </View>
-        <View style={{ width: '100%', height: `${yPercent}%`, backgroundColor: 'black', opacity: 0.3 }} />
+        <View style={{ width: '100%', height: `${yPercent}%`, backgroundColor: 'black', opacity: 0.3 }} /> */}
+        <View style={[{
+          position: 'absolute',
+          left: left,
+          top: top,
+          width: width,
+          height: height,
+          justifyContent: 'center',
+          alignItems: 'center',
+          borderWidth: 1,
+          borderColor: 'red'
+        }]}
+        />
       </View>
     );
   }
 
-  // const format: CameraDeviceFormat = {
-  //   photoHeight: height,
-  //   photoWidth: width,
-  //   videoHeight: height,
-  //   videoWidth: width,
-  //   maxISO: 100,
-  //   minISO: 0,
-  //   fieldOfView: 10,
-  //   maxZoom: 100,
-  //   colorSpaces: [],
-  //   supportsVideoHDR: false,
-  //   supportsPhotoHDR: true,
-  //   frameRateRanges: [],
-  //   autoFocusSystem: 'contrast-detection',
-  //   videoStabilizationModes: [],
-  //   pixelFormat: '420f'
-  // }
-  const formats = device?.formats || [];
-  const filterFormats = device?.formats?.filter(item => {
-    const radio = round(item.photoHeight > 0 ? item.photoWidth / item.photoHeight : 0);
-    const radio169 = round(16 / 9);
-    return radio == radio169;
-    // return {
-    //   photoHeight: item.photoHeight,
-    //   photoWidth: item.photoWidth,
-    //   radio: item.photoHeight > 0 ? item.photoWidth / item.photoHeight : 0
-    // }
-  }) || [];
-  const format = filterFormats.length > 0 ? filterFormats[0] : formats[0];
   return device !== undefined && hasPermission ? (
     <View style={{
       width: screenWidth,
@@ -284,19 +235,14 @@ const App = () => {
         style={{
           left: 0,
           top: 0,
-          width: screenWidth, 
-          height: screenHeight}}
-        // style={[StyleSheet.absoluteFill]}
-        // frameProcessor={frameProcessor}
+          width: screenWidth,
+          height: screenHeight
+        }}
         device={device}
         isActive={true}
         enableHighQualityPhotos={true}
         photo={true}
         orientation="portrait"
-        // frameProcessorFps={5}
-        // torch="on"
-        // enableZoomGesture={true}
-        // format={format}
       />
       {photoUri.length === 0 && renderFrameView()}
       {renderOverlay()}
