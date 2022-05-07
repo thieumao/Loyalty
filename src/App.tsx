@@ -140,6 +140,40 @@ const App = () => {
       await onClose();
     }
   }
+
+  const SCALE_FULL_ZOOM = 3;
+  const MAX_ZOOM_FACTOR = 20;
+  const zoom = useSharedValue(0);
+  //#region Animated Zoom
+  // This just maps the zoom factor to a percentage value.
+  // so e.g. for [min, neutr., max] values [1, 2, 128] this would result in [0, 0.0081, 1]
+  const minZoom = device?.minZoom ?? 1;
+  const maxZoom = Math.min(device?.maxZoom ?? 1, MAX_ZOOM_FACTOR);
+
+  const cameraAnimatedProps = useAnimatedProps(() => {
+    const z = Math.max(Math.min(zoom.value, maxZoom), minZoom);
+    return {
+      zoom: z,
+    };
+  }, [maxZoom, minZoom, zoom]);
+  //#endregion
+
+  //#region Pinch to Zoom Gesture
+  // The gesture handler maps the linear pinch gesture (0 - 1) to an exponential curve since a camera's zoom
+  // function does not appear linear to the user. (aka zoom 0.1 -> 0.2 does not look equal in difference as 0.8 -> 0.9)
+  const onPinchGesture = useAnimatedGestureHandler<PinchGestureHandlerGestureEvent, { startZoom?: number }>({
+    onStart: (_, context) => {
+      context.startZoom = zoom.value;
+    },
+    onActive: (event, context) => {
+      // we're trying to map the scale gesture to a linear zoom here
+      const startZoom = context.startZoom ?? 0;
+      const scale = interpolate(event.scale, [1 - 1 / SCALE_FULL_ZOOM, 1, SCALE_FULL_ZOOM], [-1, 0, 1], Extrapolate.CLAMP);
+      zoom.value = interpolate(scale, [-1, 0, 1], [minZoom, startZoom, maxZoom], Extrapolate.CLAMP);
+    },
+  });
+  //#endregion
+
   const renderOverlay = () => {
 
     return (
@@ -187,6 +221,28 @@ const App = () => {
             {text}
           </Text>
         )}
+        {photoUri.length === 0 && (
+          <TouchableOpacity style={{
+            position: 'absolute',
+            bottom: 48,
+            width: screenWidth,
+            justifyContent: 'center',
+            alignItems: 'center',
+          }} onPress={onTakePhoto}>
+            <Text style={{ color: 'red', fontSize: 20 }}>{`TAKE PHOTO`}</Text>
+          </TouchableOpacity>
+        )}
+        {photoUri.length > 0 && (
+          <TouchableOpacity style={{
+            top: 48,
+            right: 48,
+            position: 'absolute',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }} onPress={onClose}>
+            <Text style={{ color: 'yellow', fontSize: 20 }}>{`CLOSE`}</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
@@ -222,57 +278,38 @@ const App = () => {
       width: screenWidth,
       height: screenHeight,
     }}>
-      <Reanimated.View style={{
-        width: screenWidth,
-        height: screenHeight,
-      }}>
-        <TapGestureHandler onEnded={onDoubleTap} numberOfTaps={2}>
-          <Reanimated.View style={{
-            width: screenWidth,
-            height: screenHeight,
-          }}>
-            <ReanimatedCamera
-              ref={camera}
-              style={{
-                left: 0,
-                top: 0,
-                width: screenWidth,
-                height: screenHeight
-              }}
-              device={device}
-              isActive={true}
-              enableHighQualityPhotos={true}
-              photo={true}
-              orientation="portrait"
-            />
-            {photoUri.length === 0 && renderFrameView()}
-            {photoUri.length > 0 && renderOverlay()}
-
-          </Reanimated.View>
-        </TapGestureHandler>
-      </Reanimated.View>
-      {photoUri.length === 0 && (
-        <TouchableOpacity style={{
-          position: 'absolute',
-          bottom: 48,
+      <PinchGestureHandler onGestureEvent={onPinchGesture} enabled={photoUri.length === 0}>
+        <Reanimated.View style={{
           width: screenWidth,
-          justifyContent: 'center',
-          alignItems: 'center',
-        }} onPress={onTakePhoto}>
-          <Text style={{ color: 'red', fontSize: 20 }}>{`TAKE PHOTO`}</Text>
-        </TouchableOpacity>
-      )}
-      {photoUri.length > 0 && (
-        <TouchableOpacity style={{
-          top: 48,
-          right: 48,
-          position: 'absolute',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }} onPress={onClose}>
-          <Text style={{ color: 'yellow', fontSize: 20 }}>{`CLOSE`}</Text>
-        </TouchableOpacity>
-      )}
+          height: screenHeight,
+        }}>
+          <TapGestureHandler onEnded={onDoubleTap} numberOfTaps={2}>
+            <Reanimated.View style={{
+              width: screenWidth,
+              height: screenHeight,
+            }}>
+              <ReanimatedCamera
+                ref={camera}
+                style={{
+                  left: 0,
+                  top: 0,
+                  width: screenWidth,
+                  height: screenHeight
+                }}
+                device={device}
+                isActive={true}
+                enableHighQualityPhotos={true}
+                photo={true}
+                orientation="portrait"
+                animatedProps={cameraAnimatedProps}
+              />
+              {photoUri.length === 0 && renderFrameView()}
+              {renderOverlay()}
+
+            </Reanimated.View>
+          </TapGestureHandler>
+        </Reanimated.View>
+      </PinchGestureHandler>
     </GestureHandlerRootView>
   ) : (
     <View>
