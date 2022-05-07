@@ -18,6 +18,13 @@ import {
 import ImageEditor, { ImageCropData } from '@react-native-community/image-editor';
 import MlkitOcr from 'react-native-mlkit-ocr';
 import CameraRoll from '@react-native-community/cameraroll';
+import { GestureHandlerRootView, PinchGestureHandler, PinchGestureHandlerGestureEvent, TapGestureHandler } from 'react-native-gesture-handler';
+import Reanimated, { Extrapolate, interpolate, useAnimatedGestureHandler, useAnimatedProps, useSharedValue } from 'react-native-reanimated';
+
+const ReanimatedCamera = Reanimated.createAnimatedComponent(Camera);
+Reanimated.addWhitelistedNativeProps({
+  zoom: true,
+});
 
 const App = () => {
   const round = (num: number) => Math.round(num * 1000) / 1000;
@@ -126,6 +133,13 @@ const App = () => {
     setText('');
   }
 
+  const onDoubleTap = async () => {
+    if (photoUri.length === 0) {
+      await onTakePhoto();
+    } else {
+      await onClose();
+    }
+  }
   const renderOverlay = () => {
 
     return (
@@ -173,35 +187,13 @@ const App = () => {
             {text}
           </Text>
         )}
-        {photoUri.length === 0 && (
-          <TouchableOpacity style={{
-            position: 'absolute',
-            bottom: 48,
-            width: screenWidth,
-            justifyContent: 'center',
-            alignItems: 'center',
-          }} onPress={onTakePhoto}>
-            <Text style={{ color: 'red', fontSize: 20 }}>{`TAKE PHOTO`}</Text>
-          </TouchableOpacity>
-        )}
-        {photoUri.length > 0 && (
-          <TouchableOpacity style={{
-            top: 48,
-            right: 48,
-            position: 'absolute',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }} onPress={onClose}>
-            <Text style={{ color: 'yellow', fontSize: 20 }}>{`CLOSE`}</Text>
-          </TouchableOpacity>
-        )}
       </View>
     );
   };
 
   const renderFrameView = () => {
     return (
-      <View style={[StyleSheet.absoluteFill]}>
+      <View style={[StyleSheet.absoluteFill]} pointerEvents="none">
         {/* <View style={{ width: '100%', height: `${yPercent}%`, backgroundColor: 'black', opacity: 0.3 }} />
         <View style={{ width: '100%', flex: 1, flexDirection: 'row' }}>
           <View style={{ width: `${xPercent}%`, height: '100%', backgroundColor: 'black', opacity: 0.3 }} />
@@ -226,27 +218,62 @@ const App = () => {
   }
 
   return device !== undefined && hasPermission ? (
-    <View style={{
+    <GestureHandlerRootView style={{
       width: screenWidth,
       height: screenHeight,
     }}>
-      <Camera
-        ref={camera}
-        style={{
-          left: 0,
-          top: 0,
+      <Reanimated.View style={{
+        width: screenWidth,
+        height: screenHeight,
+      }}>
+        <TapGestureHandler onEnded={onDoubleTap} numberOfTaps={2}>
+          <Reanimated.View style={{
+            width: screenWidth,
+            height: screenHeight,
+          }}>
+            <ReanimatedCamera
+              ref={camera}
+              style={{
+                left: 0,
+                top: 0,
+                width: screenWidth,
+                height: screenHeight
+              }}
+              device={device}
+              isActive={true}
+              enableHighQualityPhotos={true}
+              photo={true}
+              orientation="portrait"
+            />
+            {photoUri.length === 0 && renderFrameView()}
+            {photoUri.length > 0 && renderOverlay()}
+
+          </Reanimated.View>
+        </TapGestureHandler>
+      </Reanimated.View>
+      {photoUri.length === 0 && (
+        <TouchableOpacity style={{
+          position: 'absolute',
+          bottom: 48,
           width: screenWidth,
-          height: screenHeight
-        }}
-        device={device}
-        isActive={true}
-        enableHighQualityPhotos={true}
-        photo={true}
-        orientation="portrait"
-      />
-      {photoUri.length === 0 && renderFrameView()}
-      {renderOverlay()}
-    </View>
+          justifyContent: 'center',
+          alignItems: 'center',
+        }} onPress={onTakePhoto}>
+          <Text style={{ color: 'red', fontSize: 20 }}>{`TAKE PHOTO`}</Text>
+        </TouchableOpacity>
+      )}
+      {photoUri.length > 0 && (
+        <TouchableOpacity style={{
+          top: 48,
+          right: 48,
+          position: 'absolute',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }} onPress={onClose}>
+          <Text style={{ color: 'yellow', fontSize: 20 }}>{`CLOSE`}</Text>
+        </TouchableOpacity>
+      )}
+    </GestureHandlerRootView>
   ) : (
     <View>
       <Text>No available cameras</Text>
